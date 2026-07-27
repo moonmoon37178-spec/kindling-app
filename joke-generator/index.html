@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Random Joke Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+    body {
+      font-family: 'Poppins', sans-serif;
+    }
+    .joke-card {
+      transition: all 0.3s ease;
+    }
+    .joke-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    }
+    .loader {
+      border: 4px solid rgba(59, 130, 246, 0.1);
+      border-radius: 50%;
+      border-top: 4px solid #3b82f6;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 min-h-screen">
+  <div id="root"></div>
+
+  <script type="module">
+    const { useState, useEffect } = React;
+
+    // Main App Component
+    function JokeGenerator() {
+      const [joke, setJoke] = useState(null);
+      const [loading, setLoading] = useState(false);
+      const [error, setError] = useState(null);
+      const [favorites, setFavorites] = useState([]);
+      const [showFavorites, setShowFavorites] = useState(false);
+      const [jokeType, setJokeType] = useState('any');
+
+      // Load favorites from localStorage
+      useEffect(() => {
+        const saved = localStorage.getItem('jokesFavorites');
+        if (saved) {
+          setFavorites(JSON.parse(saved));
+        }
+      }, []);
+
+      // Save favorites to localStorage
+      useEffect(() => {
+        localStorage.setItem('jokesFavorites', JSON.stringify(favorites));
+      }, [favorites]);
+
+      // Fetch joke from API
+      const fetchJoke = async () => {
+        setLoading(true);
+        setError(null);
+        setShowFavorites(false);
+        
+        try {
+          let url = 'https://official-joke-api.appspot.com/random_joke';
+          
+          if (jokeType !== 'any') {
+            url = `https://official-joke-api.appspot.com/jokes/${jokeType}/random`;
+          }
+          
+          const response = await fetch(url);
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch joke');
+          }
+          
+          const data = await response.json();
+          
+          // Handle array response for category jokes
+          const jokeData = Array.isArray(data) ? data[0] : data;
+          
+          setJoke({
+            id: jokeData.id,
+            setup: jokeData.setup,
+            punchline: jokeData.punchline,
+            type: jokeData.type,
+            timestamp: new Date().toLocaleTimeString()
+          });
+        } catch (err) {
+          setError('Oops! Could not fetch a joke. Please try again.');
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      // Add joke to favorites
+      const addToFavorites = () => {
+        if (joke && !favorites.some(fav => fav.id === joke.id)) {
+          setFavorites([...favorites, joke]);
+        }
+      };
+
+      // Remove from favorites
+      const removeFromFavorites = (id) => {
+        setFavorites(favorites.filter(fav => fav.id !== id));
+      };
+
+      // Check if current joke is favorited
+      const isFavorited = joke && favorites.some(fav => fav.id === joke.id);
+
+      return (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                😂 Joke Generator
+              </h1>
+              <p className="text-gray-600 text-lg">Get a fresh laugh every time!</p>
+            </div>
+
+            {/* Controls */}
+            <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <select
+                  value={jokeType}
+                  onChange={(e) => setJokeType(e.target.value)}
+                  className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 font-medium transition"
+                >
+                  <option value="any">Any Type</option>
+                  <option value="general">General</option>
+                  <option value="knock-knock">Knock-Knock</option>
+                  <option value="programming">Programming</option>
+                </select>
+
+                <button
+                  onClick={() => setShowFavorites(!showFavorites)}
+                  className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-semibold transition transform hover:scale-105 flex items-center justify-center gap-2"
+                >
+                  ❤️ Favorites ({favorites.length})
+                </button>
+              </div>
+
+              <button
+                onClick={fetchJoke}
+                disabled={loading}
+                className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg font-bold text-lg transition transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="loader"></div>
+                    Loading...
+                  </>
+                ) : (
+                  <>🎲 Get a Joke</>
+                )}
+              </button>
+            </div>
+
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-100 border-2 border-red-400 text-red-700 px-6 py-4 rounded-lg mb-6">
+                {error}
+              </div>
+            )}
+
+            {/* Favorites View */}
+            {showFavorites && (
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">Your Favorites</h2>
+                {favorites.length === 0 ? (
+                  <div className="bg-white rounded-2xl shadow-lg p-8 text-center text-gray-600">
+                    <p className="text-xl">No favorites yet. Add some jokes!</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {favorites.map((fav, idx) => (
+                      <div key={fav.id} className="bg-white rounded-2xl shadow-lg p-6">
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide">
+                            {fav.type || 'General'}
+                          </span>
+                          <button
+                            onClick={() => removeFromFavorites(fav.id)}
+                            className="text-red-500 hover:text-red-700 text-xl transition"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <p className="text-gray-800 font-semibold mb-2">{fav.setup}</p>
+                        <p className="text-gray-600 italic mb-2">{fav.punchline}</p>
+                        <p className="text-xs text-gray-400">{fav.timestamp}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Joke Display */}
+            {!showFavorites && joke && (
+              <div className="joke-card bg-white rounded-2xl shadow-xl p-8 mb-6">
+                <div className="flex justify-between items-start mb-4">
+                  <span className="text-sm font-semibold text-blue-600 uppercase tracking-wide bg-blue-100 px-3 py-1 rounded-full">
+                    {joke.type || 'General'}
+                  </span>
+                  <span className="text-xs text-gray-400">{joke.timestamp}</span>
+                </div>
+
+                <div className="mb-6">
+                  <p className="text-2xl font-bold text-gray-800 mb-4">{joke.setup}</p>
+                  <p className="text-xl text-purple-600 font-semibold italic">{joke.punchline}</p>
+                </div>
+
+                <div className="flex gap-3 flex-wrap">
+                  <button
+                    onClick={addToFavorites}
+                    disabled={isFavorited}
+                    className={`flex-1 px-4 py-3 rounded-lg font-semibold transition ${
+                      isFavorited
+                        ? 'bg-red-100 text-red-600 cursor-default'
+                        : 'bg-red-100 text-red-600 hover:bg-red-200'
+                    }`}
+                  >
+                    {isFavorited ? '❤️ Favorited' : '🤍 Add to Favorites'}
+                  </button>
+                  <button
+                    onClick={fetchJoke}
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg font-semibold transition"
+                  >
+                    🔄 Next Joke
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Initial State */}
+            {!showFavorites && !joke && !loading && (
+              <div className="bg-white rounded-2xl shadow-xl p-12 text-center">
+                <p className="text-2xl text-gray-600 mb-4">👈 Click "Get a Joke" to start laughing!</p>
+                <p className="text-gray-500">Select a joke type and get started</p>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Import React from CDN
+    async function initApp() {
+      const React = await import('https://esm.sh/react@18.3.1').then(m => m.default);
+      const { createRoot } = await import('https://esm.sh/react-dom@18.3.1/client').then(m => m);
+      
+      Object.assign(window, { React });
+      
+      const root = createRoot(document.getElementById('root'));
+      root.render(React.createElement(JokeGenerator));
+    }
+
+    initApp().catch(console.error);
+  </script>
+</body>
+</html>
