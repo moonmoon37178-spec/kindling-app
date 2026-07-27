@@ -1,0 +1,28 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="flameGrad" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stopColor="#B5502A" />
+      <stop offset="55%" stopColor="#D97A2E" />
+      <stop offset="100%" stopColor="#F0C270" />
+    </linearGradient>
+    <radialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stopColor="rgba(232,166,72,0.9)" />
+      <stop offset="60%" stopColor="rgba(181,80,42,0.3)" />
+      <stop offset="100%" stopColor="rgba(181,80,42,0)" />
+    </radialGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="200" height="200" fill="#1C1A17"/>
+  
+  <!-- Glow -->
+  <circle cx="100" cy="140" r="80" fill="url(#glowGrad)" opacity="0.6"/>
+  
+  <!-- Flame -->
+  <g transform="translate(100, 60)">
+    <path
+      d="M0 10 C-15 35 -25 55 -15 80 C-25 75 -30 65 -28 50 C-40 85 -25 115 0 125 C-20 110 -18 85 0 70 C0 95 15 100 20 120 C40 105 50 80 35 55 C45 60 50 75 45 90 C60 65 55 30 35 5 C45 25 35 40 25 35 C32 20 28 5 0 10 Z"
+      fill="url(#flameGrad)"
+    />
+  </g>
+</svg>
